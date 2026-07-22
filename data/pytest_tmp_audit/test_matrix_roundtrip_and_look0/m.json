@@ -1,0 +1,15 @@
+{
+  "provenance": "test",
+  "n_scenarios": 3,
+  "n_transitions": 3,
+  "matrix": {
+    "T1055": {
+      "T1003": 1.0
+    }
+  },
+  "support": {
+    "T1055": {
+      "T1003": 3
+    }
+  }
+}

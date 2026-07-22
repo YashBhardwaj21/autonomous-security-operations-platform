@@ -129,6 +129,27 @@ def process_scenario(name: str, metadata_path: Path, manifest: list):
         )
 
 
+def fetch_metadata_for_scenario(name: str) -> Optional[Path]:
+    groups = ["atomic", "compound"]
+    for group in groups:
+        url = f"https://raw.githubusercontent.com/OTRF/Security-Datasets/master/datasets/{group}/_metadata/{name}.yaml"
+        target_dir = ROOT / "datasets" / group / "_metadata"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_file = target_dir / f"{name}.yaml"
+        if target_file.exists():
+            return target_file
+        try:
+            r = requests.get(url, timeout=30)
+            if r.status_code == 200:
+                with target_file.open("wb") as f:
+                    f.write(r.content)
+                print(f"[METADATA OK] Downloaded {group}/_metadata/{name}.yaml")
+                return target_file
+        except Exception:
+            pass
+    return None
+
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -151,8 +172,12 @@ def main():
     for scenario in args.scenarios:
 
         if scenario not in metadata:
-            print(f"[ERROR] Metadata not found: {scenario}")
-            continue
+            fetched_path = fetch_metadata_for_scenario(scenario)
+            if fetched_path:
+                metadata[scenario] = fetched_path
+            else:
+                print(f"[ERROR] Metadata not found: {scenario}")
+                continue
 
         process_scenario(
             scenario,

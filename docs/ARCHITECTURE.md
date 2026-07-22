@@ -33,11 +33,11 @@ flowchart LR
 | **Canonical Schema** | `src/canon/` | Single source of truth for events (`CanonicalEvent`), entities (`ProcessEntity`, `FileEntity`, etc.), sessions (`Activity`), and enums (`SourceType`, `RelationshipType`). |
 | **Ingestion & Parsing** | `src/ingestion/` | Parses Sysmon (1, 3, 7, 10, 11, 12, 13) and PowerShell (4103, 4104) events. Counts drop statistics without timestamp fabrication. |
 | **Sessionisation** | `src/sessions/` | Groups canonical events into entity- and logon-keyed sessions within defined time windows. Ensures sessions never span multiple hosts. |
-| **Feature Extraction** | `src/features/` | Extracts 52-dimensional tabular feature vectors from session activities (`AttributionFeaturePipeline`). Fits hygiene transforms (`HygieneTransform`). |
+| **Feature Extraction** | `src/features/` | Extracts 103-dimensional tabular feature vectors from session activities (`AttributionFeaturePipeline`). Fits hygiene transforms (`HygieneTransform`). |
 | **ATT&CK Attribution** | `src/attribution/` | Predicts ATT&CK techniques with calibrated probabilities via `CalibratedClassifierCV`. Returns `model_unavailable` when un-fitted. |
 | **UEBA Anomaly Engine** | `src/ueba/` | Computes online anomaly scores via Welford running stats and IsolationForest on an independent feature space. |
 | **Next-Step Prediction** | `src/prediction/` | Calculates next-stage attack probabilities using a data-derived ATT&CK transition matrix (`transition_matrix.json`). |
-| **Threat-Intel Retrieval** | `src/retrieval/` | Queries ATT&CK STIX & advisory embeddings. Non-authoritative, evidence-only, non-gating. |
+| **Threat-Intel Retrieval** | `src/retrieval/` | Queries ATT&CK STIX & advisory embeddings (`STIXRetrievalService` in `src/retrieval/service.py`). Non-authoritative, evidence-only, non-gating. |
 | **Digital Twin Simulator** | `src/twin/` | Evaluates network reachability and blast radius via Dijkstra traversal over static NetworkX asset-topology graphs. |
 | **SOAR Response Gate** | `src/soar/` | Evaluates response policies and blast-radius constraints. Fails safe by requiring manual approval on Tier-0 assets or unverified twin paths. |
 | **API Application** | `src/api/` | FastAPI web layer (`app.py`), JWT authentication (`auth.py`), and end-to-end incident orchestration (`pipeline.py`). |

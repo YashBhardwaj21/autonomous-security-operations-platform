@@ -84,19 +84,24 @@ def label_from_yaml(path: str, scenario_id: str,
 
 
 def build_label_space(labels: List[ScenarioLabel],
-                      min_scenarios: int = MIN_SCENARIOS_PER_CLASS):
+                      min_scenarios: int = MIN_SCENARIOS_PER_CLASS,
+                      scenario_ids: Optional[List[str]] = None):
     """Return (supported_techniques, unsupported_techniques, technique_scenario_counts).
 
     A technique is *supported* iff it appears in >= min_scenarios distinct scenarios.
     Unsupported techniques are collapsed to UNSUPPORTED_CLASS downstream.
     """
-    counts: Counter = Counter()
-    for lab in labels:
+    from collections import defaultdict
+    scen_techs: Dict[str, Set[str]] = defaultdict(set)
+    for i, lab in enumerate(labels):
+        scen_id = scenario_ids[i] if scenario_ids is not None else lab.scenario_id
         for tech in lab.techniques:
-            counts[tech] += 1
+            scen_techs[tech].add(scen_id)
+
+    counts = {t: len(scens) for t, scens in scen_techs.items()}
     supported = {t for t, c in counts.items() if c >= min_scenarios}
     unsupported = {t for t, c in counts.items() if c < min_scenarios}
-    return supported, unsupported, dict(counts)
+    return supported, unsupported, counts
 
 
 def project_labels(labels: List[ScenarioLabel], supported: Set[str]) -> List[Set[str]]:

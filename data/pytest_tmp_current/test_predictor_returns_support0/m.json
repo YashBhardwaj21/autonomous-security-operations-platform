@@ -1,0 +1,15 @@
+{
+  "provenance": "derived from real scenarios",
+  "n_scenarios": 0,
+  "n_transitions": 0,
+  "matrix": {
+    "T1055": {
+      "T1003": 1.0
+    }
+  },
+  "support": {
+    "T1055": {
+      "T1003": 4
+    }
+  }
+}

@@ -9,32 +9,33 @@ Launch server: `$env:JWT_SECRET="your-secret-key"; uvicorn src.api.app:app --por
 
 | Method | Path | Authentication | Description |
 |---|---|---|---|
-| **GET** | `/health` | None | Returns liveness status, model load status (`model_loaded`), and transition matrix availability. |
-| **POST** | `/auth/token` | None | Authenticates username/password (bcrypt) and returns a JWT access token. |
-| **POST** | `/ingest/events` | Bearer Token | Ingests raw event batches, runs `IncidentPipeline`, and returns sessionised incidents with UEBA, attribution, predictions, and SOAR response proposals. |
+| **GET** | `/health` | None | Returns liveness status, attribution status (`attribution_available`), and transition matrix status (`prediction_available`). |
+| **POST** | `/auth/token` | None | Authenticates username/password (JSON payload) and returns a JWT access token. |
+| **POST** | `/ingest/events` | Bearer Token | Ingests raw event batches, runs `IncidentPipeline`, and returns sessionised incidents. |
+| **POST** | `/twin/topology` | Bearer Token | Ingests asset nodes and network reachability edges for digital twin path analysis. |
+| **POST** | `/vuln/inventory` | Bearer Token | Ingests vulnerability scan data (CVE, CVSS, EPSS, asset tier). |
+| **GET** | `/vuln/remediation-queue` | Bearer Token | Returns risk-prioritized vulnerability remediation queue scored by `src/vuln/scorer.py`. |
 
 ---
 
-## Endpoint Details
+## Endpoint Specifications
 
 ### 1. `GET /health`
-Returns system status diagnostics.
+Returns system component availability.
 
-#### Example Response:
 ```json
 {
   "status": "ok",
-  "model_loaded": false,
-  "transition_matrix_loaded": true
+  "attribution_available": false,
+  "prediction_available": true
 }
 ```
 
 ---
 
 ### 2. `POST /auth/token`
-Body format: Form data (`username`, `password`). Verifies credentials against configured user provider.
+Accepts JSON payload: `{ "username": "admin", "password": "yourpassword" }`.
 
-#### Example Response:
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -47,7 +48,7 @@ Body format: Form data (`username`, `password`). Verifies credentials against co
 ### 3. `POST /ingest/events`
 Requires header `Authorization: Bearer <access_token>`.
 
-#### Example Request:
+#### Request JSON Body:
 ```json
 {
   "events": [
@@ -64,7 +65,7 @@ Requires header `Authorization: Bearer <access_token>`.
 }
 ```
 
-#### Example Response:
+#### Response:
 ```json
 {
   "parsed_events": 1,
@@ -93,7 +94,59 @@ Requires header `Authorization: Bearer <access_token>`.
 
 ---
 
-## Degraded Runtime & Boundary Notes
+### 4. `POST /twin/topology`
+Requires header `Authorization: Bearer <access_token>`.
 
-* **Model Availability (`model_unavailable`)**: If `models/attribution.joblib` is missing, `attribution.status` returns `"model_unavailable"`. The pipeline degrades gracefully without producing fabricated probabilities.
-* **Non-Executing SOAR Gate**: The API evaluates response rules and returns response proposals. Active network/EDR execution is simulated; no external EDR or firewall API calls are executed.
+#### Request JSON Body:
+```json
+{
+  "assets": [
+    {"asset_id": "web_srv", "name": "Web Gateway", "type": "server", "criticality_tier": 2},
+    {"asset_id": "dc01", "name": "Domain Controller", "type": "server", "criticality_tier": 0}
+  ],
+  "edges": [
+    {"from_asset": "web_srv", "to_asset": "dc01"}
+  ]
+}
+```
+
+---
+
+### 5. `POST /vuln/inventory` & `GET /vuln/remediation-queue`
+Requires header `Authorization: Bearer <access_token>`.
+
+#### Ingest Inventory (`POST /vuln/inventory`):
+```json
+{
+  "items": [
+    {
+      "cve": "CVE-2024-21413",
+      "cvss": 9.8,
+      "epss": 0.75,
+      "asset_criticality_tier": 0,
+      "attack_path_exposure": 0.5,
+      "ttp_overlap": 0.2
+    }
+  ]
+}
+```
+
+#### Retrieve Remediation Queue (`GET /vuln/remediation-queue`):
+```json
+{
+  "remediation_queue": [
+    {
+      "cve": "CVE-2024-21413",
+      "risk_score": 0.7425,
+      "components": {
+        "epss": 0.75,
+        "cvss": 0.98,
+        "asset_criticality": 1.0,
+        "attack_path_exposure": 0.5,
+        "ttp_overlap": 0.2
+      },
+      "tier": 0
+    }
+  ]
+}
+```

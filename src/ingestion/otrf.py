@@ -24,6 +24,7 @@ import numpy as np
 import yaml
 
 from src.canon.schema import SourceType
+from src.features.evidence import DEFAULT_EVIDENCE_FILTER
 from src.features.labeling import ScenarioLabel, label_from_metadata
 from src.features.pipeline import AttributionFeaturePipeline
 from src.ingestion.parser import DropStats, ParserFactory
@@ -84,13 +85,27 @@ def read_raw_events(zip_path: str) -> Iterator[dict]:
                         continue  # counted upstream if needed; never fabricated
 
 
+def check_has_evidence(fmap: Dict[str, float]) -> bool:
+    """Check if session feature map contains explicit attack/process/network indicators."""
+    if fmap.get("lsass_targeted_count", 0.0) > 0 or fmap.get("process_access_count", 0.0) > 0:
+        return True
+    if fmap.get("network_flow_count", 0.0) > 0 or fmap.get("registry_mod_count", 0.0) > 0 or fmap.get("failed_login_count", 0.0) > 0:
+        return True
+    for k, v in fmap.items():
+        if k.startswith("proc_") and v > 0:
+            return True
+    return False
+
+
 @dataclass
 class BuiltDataset:
     X: np.ndarray
     feature_names: List[str]
     labels: List[ScenarioLabel]           # multi-label per session (scenario's labels)
     scenario_ids: List[str]               # group key for LOSO
-    y_primary: List[str]                  # primary technique per session (first mapping)
+    y_primary: List[str]                  # legacy / primary technique
+    train_target: List[Optional[str]] = field(default_factory=list)  # single-technique target filtering
+    has_evidence: List[bool] = field(default_factory=list)           # explicit process/attack evidence flag
     drop_stats: Dict[str, int] = field(default_factory=dict)
 
 
@@ -105,6 +120,8 @@ def build_dataset(root: str = DEFAULT_ROOT, source: SourceType = SourceType.OTRF
     labels: List[ScenarioLabel] = []
     groups: List[str] = []
     y_primary: List[str] = []
+    train_target: List[Optional[str]] = []
+    has_evidence: List[bool] = []
     names = fp.feature_names()  # stable schema
 
     for scenario_id, meta, zips in iter_scenarios(root):
@@ -120,29 +137,23 @@ def build_dataset(root: str = DEFAULT_ROOT, source: SourceType = SourceType.OTRF
         if not events:
             continue
         for sess in builder.build_sessions(events, scenario_id=scenario_id):
-            print(type(sess))
-            print(sess)
-
-            try:
-                print(sess.__dict__.keys())
-            except AttributeError:
-                print(dir(sess))
-
-            break
-
             fv = fp.extract(sess)
             fmap = dict(zip(fv.feature_names, fv.features))
             rows.append([fmap.get(n, 0.0) for n in names])
             labels.append(scen_label)
             groups.append(scenario_id)
+            has_evidence.append(DEFAULT_EVIDENCE_FILTER.has_evidence(fmap))
 
-            first = sorted(scen_label.techniques)[0]
-            y_primary.append(first)
+            # Explicit single-technique filtering:
+            # Only scenarios with exactly 1 parent technique set train_target to that technique.
+            single_tech = list(scen_label.techniques)[0] if len(scen_label.techniques) == 1 else None
+            train_target.append(single_tech)
+            y_primary.append(single_tech or sorted(scen_label.techniques)[0])
 
     X = np.asarray(rows, dtype=np.float64) if rows else np.zeros((0, len(names)))
     return BuiltDataset(
         X=X, feature_names=names, labels=labels, scenario_ids=groups,
-        y_primary=y_primary,
+        y_primary=y_primary, train_target=train_target, has_evidence=has_evidence,
         drop_stats={
             "no_timestamp": stats.no_timestamp, "bad_timestamp": stats.bad_timestamp,
             "no_parser": stats.no_parser, "malformed": stats.malformed,

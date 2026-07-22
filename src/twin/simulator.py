@@ -1,15 +1,4 @@
 """Digital Twin simulator — ported from etbackend, topology fabrication REMOVED.
-
-REPORT.md H10 / contradiction #1: the old `build()` fell back to
-`_auto_generate_edges()` inventing DMZ->internal->OT connectivity when no edges
-were supplied — so every "blast radius" rested on fabricated topology. Here,
-`build()` REQUIRES real asset-relationship edges; if none are provided it raises,
-because a twin over invented edges is worse than no twin. Edges come from a real
-inventory/topology file the operator supplies (data/reference/topology.json).
-
-The Dijkstra attack-path simulation itself (real, unit-tested) is unchanged. The
-twin is static and rebuilt on inventory change — it is NOT mutated per event
-(the SOC-workflow "every event updates this graph" framing was wrong; see docs).
 """
 from __future__ import annotations
 

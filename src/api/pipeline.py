@@ -1,13 +1,4 @@
 """IncidentPipeline — the end-to-end chain that never existed in one place (H12).
-
-ingest(raw events) -> parse -> per-entity sessions -> UEBA (own feature space) ->
-attribution (calibrated loader; model_unavailable if untrained) -> SOAR gate
-(response-mode + real twin blast radius) -> next-step prediction -> retrieval evidence.
-
-This is the seam the two former repos never tested together. It is pure library
-code (no web framework) so it is exercised by tests/integration directly.
-No synthetic data: it consumes real parsed events; if the attribution model or
-matrix or corpus is absent, those stages report unavailable — never fabricated.
 """
 from __future__ import annotations
 
@@ -41,6 +32,8 @@ class IncidentPipeline:
     def __post_init__(self):
         if self.sessions is None:
             self.sessions = SessionBuilder(self.factory)
+        if self.twin is None:
+            self.twin = DigitalTwinSimulator()
 
     def process_events(self, raw_events: List[Dict[str, Any]], scenario_id: Optional[str] = None,
                        source: SourceType = SourceType.OTRF,

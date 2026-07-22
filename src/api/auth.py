@@ -1,15 +1,4 @@
 """JWT auth — real, with the etbackend M-5 bugs fixed.
-
-Fixes:
-* No baked JWT secret — get_settings().require_jwt_secret() raises if JWT_SECRET
-  is unset (was "jwt-dev-secret-change-in-production" in etbackend).
-* No plaintext passwords — credentials are bcrypt-verified via passlib (etbackend
-  created a bcrypt context then compared plaintext).
-* WebSocket/token-type: access tokens carry type="access"; verification rejects
-  any other token type (etbackend accepted refresh tokens on the WS).
-
-Users come from a UserProvider the operator supplies (bcrypt hashes). A demo
-provider lives OUTSIDE the app path in scripts/demo_seed.py — never imported here.
 """
 from __future__ import annotations
 

@@ -73,3 +73,42 @@ class HierarchicalAttributionModel:
     @classmethod
     def factory(cls, **kw):
         return lambda: cls(**kw)
+
+
+class HygienicAttributionEstimator:
+    """Wrapper estimator fitting HygieneTransform strictly on outer train fold before model fitting."""
+
+    def __init__(self, feature_names: Sequence[str], n_estimators: int = 300,
+                 max_depth: Optional[int] = None, calibrate: bool = True,
+                 use_xgboost: bool = False, random_state: int = 42):
+        from src.features.hygiene import HygieneTransform
+        self.feature_names = list(feature_names)
+        self.hygiene = HygieneTransform()
+        self.model = HierarchicalAttributionModel(
+            n_estimators=n_estimators, max_depth=max_depth,
+            calibrate=calibrate, use_xgboost=use_xgboost,
+            random_state=random_state
+        )
+        self.classes_: List = []
+
+    def fit(self, X, y, groups_train: Optional[Sequence] = None):
+        X = np.asarray(X, dtype=np.float64)
+        self.hygiene.fit(X, self.feature_names)
+        Xh = self.hygiene.transform(X)
+        self.model.fit(Xh, y, groups_train=groups_train)
+        self.classes_ = self.model.classes_
+        return self
+
+    def predict_proba(self, X) -> np.ndarray:
+        X = np.asarray(X, dtype=np.float64)
+        Xh = self.hygiene.transform(X)
+        return self.model.predict_proba(Xh)
+
+    def predict(self, X):
+        proba = self.predict_proba(X)
+        return [self.classes_[i] for i in proba.argmax(axis=1)]
+
+    @classmethod
+    def factory(cls, feature_names: Sequence[str], **kw):
+        return lambda: cls(feature_names, **kw)
+
