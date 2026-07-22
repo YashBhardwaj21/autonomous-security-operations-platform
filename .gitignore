@@ -1,0 +1,69 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Python & Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py~
+.python-version
+
+# Datasets & Heavy Data Files
+data/raw/
+data/processed/
+data/reference/
+data/metadata/
+data/pytest_tmp/
+*.pt
+*.pth
+*.npz
+*.npy
+*.parquet
+*.h5
+
+# Model Checkpoints & Artifacts
+models/*.joblib
+models/*.pt
+models/*.onnx
+models/*.bin
+models/*.pkl
+
+# Audit Logs, Build Reports & Dump Files
+audit.txt
+gap_audit.txt
+BUILD_LOG.md
+MERGE_REPORT.md
+src_tree*
+tests_tree*
+project_structure*
+*_tree.txt
+*.log
+*.audit
+
+# Analysis Reports & Generated Figures
+reports/
+
+# Training Runs & Outputs
+runs/
+
+# Pytest & Coverage
+.pytest_cache/
+.pytest_tmp/
+.pytest-tmp-*/
+.coverage
+htmlcov/
+
+# OS & Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
