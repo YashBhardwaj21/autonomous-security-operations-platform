@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-"""Fetch a SMALL subset of LANL benign telemetry for the UEBA baseline.
-
-[YOU run this — bandwidth. FABLE wrote it.] Respects the 16GB RAM ceiling: fetches
-only a handful of day-files, not the full 12GB/1.65B-event corpus. Benign-only:
-red-team rows are used solely to EXCLUDE labelled events from the benign population.
-
+"""
 Sources (verified):
   LANL 2015 cyber1: https://csr.lanl.gov/data/cyber1/ (auth/proc/flows/dns/redteam .txt.gz)
   LANL 2017 unified (pure benign): https://lanl.ma.ic.ac.uk/data/2017/wls/wls_day-<i>.bz2

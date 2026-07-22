@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""Splunk BOTS parser-validation harness — HELD-OUT, never trained on (REPORT.md M4).
-
-[FABLE wrote it; YOU run it.] Confirms the canonical parser produces sane events on
-BOTS data (an external sanity check). Does NOT train and does NOT score accuracy.
-BOTS v2/v3 are git-lfs repos: https://github.com/splunk/botsv3 (clone with git-lfs).
-Point --path at exported ndjson/json event files.
-"""
 import argparse, glob, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.canon.schema import SourceType

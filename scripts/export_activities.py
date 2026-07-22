@@ -27,41 +27,41 @@ def entity_to_dict(entity):
 
 def activity_to_dict(activity):
     """Convert an Activity object into a JSON dict."""
+    if hasattr(activity, "model_dump"):
+        return activity.model_dump(mode="json")
 
     return {
         "activity_id": getattr(activity, "activity_id", None),
         "scenario_id": getattr(activity, "scenario_id", None),
-
+        "host": getattr(activity, "host", None),
+        "logon_id": getattr(activity, "logon_id", None),
+        "source": getattr(activity, "source", "OTRF"),
+        "start_time": getattr(activity, "start_time", None),
+        "end_time": getattr(activity, "end_time", None),
         "processes": {
             str(k): entity_to_dict(v)
             for k, v in getattr(activity, "processes", {}).items()
         },
-
         "users": {
             str(k): entity_to_dict(v)
             for k, v in getattr(activity, "users", {}).items()
         },
-
         "files": {
             str(k): entity_to_dict(v)
             for k, v in getattr(activity, "files", {}).items()
         },
-
         "registry": {
             str(k): entity_to_dict(v)
             for k, v in getattr(activity, "registry", {}).items()
         },
-
         "network": {
             str(k): entity_to_dict(v)
             for k, v in getattr(activity, "network", {}).items()
         },
-
         "services": {
             str(k): entity_to_dict(v)
             for k, v in getattr(activity, "services", {}).items()
         },
-
         "relationships": getattr(activity, "relationships", []),
     }
 

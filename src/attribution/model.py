@@ -1,34 +1,7 @@
-"""Calibrated technique-attribution model — REPORT.md Stage 3/4 (H1, M9).
-
-Satisfies the evaluation-harness estimator protocol:
-    fit(X, y, groups_train=None) -> self
-    predict_proba(X) -> ndarray (n, n_classes)
-    classes_ -> list
-
-Design (scaffold — trained by YOU, never by Fable):
-* Core estimator: RandomForest (XGBoost optional, lazy). Low-parameter, well-
-  regularised — the right regime for the scarce OTRF label budget (the appendix's
-  data-budget argument).
-* Calibration: CalibratedClassifierCV(method="sigmoid") fit with GROUPED inner
-  splits (grouped by scenario) so calibration never leaks across scenarios. This
-  is the calibrated probability the SOAR blast-radius gate consumes (H1) — no more
-  raw predict_proba behind the 0.85 threshold.
-* Optional hierarchical tactic gate: if an ATT&CK STIX mapping is available, a
-  technique's probability is suppressed unless its tactic is among the top tactics
-  implied by the sample's predicted techniques. Absent STIX -> unconstrained
-  (honest fallback, not fabricated).
-
-There is NO synthetic-data path and NO heuristic confidence fallback (REPORT.md
-C3). If untrained, predict_proba raises — callers must handle "model_unavailable".
-"""
 from __future__ import annotations
-
 from typing import List, Optional, Sequence
-
 import numpy as np
-
 from src.evaluation.harness import inner_group_kfold
-
 
 class HierarchicalAttributionModel:
     def __init__(self, n_estimators: int = 300, max_depth: Optional[int] = None,

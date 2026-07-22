@@ -1,18 +1,3 @@
-#!/usr/bin/env python3
-"""Fetch REAL threat-intelligence into data/reference/ for the retrieval corpus.
-
-[FABLE — CODE ONLY. YOU run it: some sources need network / may be rate-limited.]
-Never fabricates advisory IDs (REPORT.md H7). Writes:
-  data/reference/enterprise-attack.json         (MITRE ATT&CK STIX bundle)
-  data/reference/advisories/cert-in/*.json      (real CERT-In advisory text)
-  data/reference/advisories/cisa/*.json         (real CISA advisory text)
-  data/reference/cves/*.json                     (real CVE summaries)
-
-Advisory/CVE writers expect each JSON as: {"ref": "<real id>", "text": "...",
-"technique_ids": ["T...."]}. Only include advisories you have actually retrieved;
-an empty directory is correct and honest — the retriever will simply have no
-advisories rather than inventing them.
-"""
 from __future__ import annotations
 
 import os

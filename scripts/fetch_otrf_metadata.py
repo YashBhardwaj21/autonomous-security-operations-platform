@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""Fetch OTRF scenario METADATA (small yaml files) for label + transition building.
-
-[FABLE — CODE ONLY, but safe to run: metadata is KBs, not the GB event bundles.]
-Downloads the compound and atomic _metadata/*.yaml from OTRF/Security-Datasets into
-data/raw/Security-Datasets/... These carry attack_mappings (labels) and drive the
-data-derived transition matrix (scripts/build_transition_matrix.py). Event ZIPs are
-NOT fetched here — see scripts/fetch_otrf_sample.py for a few real scenarios.
-"""
 from __future__ import annotations
 
 import os

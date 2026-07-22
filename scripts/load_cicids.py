@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""Load CICIDS2017/2018 BENIGN network flows into UEBA features.
-
-[FABLE wrote it; YOU provide the CSVs.] Use the cleaned Kaggle mirrors (NOT the
-450GB AWS bucket): https://www.kaggle.com/datasets/dhoogla/cicids2017 (and .../csecicids2018).
-Place CSVs under data/raw/cicids/. Only Label==BENIGN rows are used.
-"""
 import glob, os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.ingestion.benign import cicids_from_csv

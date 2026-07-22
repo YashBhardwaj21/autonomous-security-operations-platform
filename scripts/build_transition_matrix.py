@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""Build the data-derived ATT&CK transition matrix from real OTRF metadata.
-
-[FABLE — CODE ONLY, deterministic: safe to run — pure counting, no model, no tuning.]
-Reads data/raw/Security-Datasets/**/_metadata/*.yaml (fetch via
-scripts/fetch_otrf_metadata.py) and writes models/transition_matrix.json with true,
-reproducible provenance. Prints per-source rows and their support counts.
-"""
 from __future__ import annotations
 
 import os
