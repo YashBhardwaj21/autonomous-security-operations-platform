@@ -1,31 +1,36 @@
-# Product Requirements — Autonomous Security Operations Platform
+# Product Requirements Document (PRD) — Autonomous Security Operations Platform
 
-> Restored to REAL current-state (these docs were deleted from both source repos'
-> git history). Every requirement notes its implementation status with a file path.
+---
 
-## Problem
-Public-sector/critical-infrastructure SOCs detect breaches weeks-to-months late.
-APTs operate low-and-slow to evade signatures. We provide a behavioural-intelligence
-layer on top of the SIEM that compresses compromise→detection→response.
+## 1. Problem Statement & Objective
 
-## Capabilities & status
-| PS item | Status | Where |
-|---|---|---|
-| B1/T2 Behavioural anomaly detection (UEBA) | Real online engine; benign baseline pending real corpus | `src/ueba/engine.py`; loaders `src/ingestion/benign.py` |
-| B2/T1 ATT&CK attribution (classifier-first, deliberate deviation) | Calibrated scaffold; **operator trains** on real OTRF | `src/attribution/*`, `scripts/train_attribution.py` |
-| B2 Next-step prediction | Real, data-derived transition matrix | `src/prediction/*`, `models/transition_matrix.json` |
-| B3/T6 Autonomous response w/ blast-radius gates | Real gate + response modes; connectors simulated | `src/soar/*` |
-| B4 Vulnerability prioritisation | EPSS-aware scorer; operator supplies real CVE feed | `src/vuln/scorer.py` |
-| B5 Digital Twin | Real Dijkstra sim; **real topology required** | `src/twin/simulator.py` |
-| T3 Graph AI | Classical graph traversal; **no GNN** (honest) | `src/twin`, `src/graph` |
-| T4 RAG over threat-intel | Real embedding retrieval; operator supplies advisories | `src/retrieval/*` |
-| T5 Knowledge graph (ATT&CK) | STIX loader + curated mapping | `src/ml/attck_loader.py` |
+Modern Security Operations Centers (SOCs) face overwhelming telemetry volumes, high false-positive rates, and prolonged adversary dwell times. Advanced Persistent Threats (APTs) execute low-and-slow tactics to bypass static signature rules.
 
-## Non-goals (explicit)
-Agentic-AI security-critical path (deterministic by design); GNN-from-scratch; live
-OT/ICS telemetry (OT exists only as twin topology — no OT telemetry ingested); real
-EDR/firewall/IdP execution (simulated); multi-week live capture.
+The **Autonomous Security Operations Platform** provides a behavioral-intelligence layer above traditional SIEM telemetry to automate event parsing, sessionisation, ATT&CK technique attribution, next-step prediction, threat-intel retrieval, and blast-radius-aware response gating.
 
-## §7.2 note
-The retrieval layer NEVER fabricates advisory identifiers. Absent a real advisory
-corpus it returns none (honest), never invented CIAD/Sigma IDs (was REPORT.md H7).
+---
+
+## 2. Feature & Capability Status Matrix
+
+| Capability ID | Requirement Description | Implementation Status | Location |
+|---|---|---|---|
+| **CAP-01** | Canonical Event Parsing & Drop Tracking | **Implemented** | `src/ingestion/parser.py` |
+| **CAP-02** | Entity- and Logon-Keyed Session Builder | **Implemented** | `src/sessions/session_builder.py` |
+| **CAP-03** | Tabular Attribution Feature Extraction | **Implemented** | `src/features/pipeline.py` |
+| **CAP-04** | Calibrated ATT&CK Attribution Model | **In-Progress (Scaffold)** | `src/attribution/model.py`, `scripts/train_attribution.py` |
+| **CAP-05** | Online UEBA Anomaly Engine | **Implemented** | `src/ueba/engine.py` |
+| **CAP-06** | Data-Derived Next-Step Prediction | **Implemented** | `src/prediction/transition.py` |
+| **CAP-07** | Threat-Intel Embedding Retrieval | **Implemented** | `src/retrieval/retrieval_engine.py` |
+| **CAP-08** | Digital Twin Dijkstra Blast-Radius Sim | **Implemented** | `src/twin/simulator.py` |
+| **CAP-09** | Deterministic SOAR Blast-Radius Gate | **Implemented** | `src/soar/gate.py` |
+| **CAP-10** | GraphSAGE GNN Activity Classification | **Archived (Experimental)** | `experiments/gnn/`, `archive/gnn-2026-07/` |
+
+---
+
+## 3. Explicit Non-Goals & Out-of-Scope Items
+
+* **Live EDR / Firewall Remediation**: The platform generates response proposals; active execution against live active directory or security appliances is out of scope.
+* **Production Model Performance Claims**: Pre-packaged trained weights (`attribution.joblib`) are omitted. Models must be trained and audited by operators using real telemetry archives.
+* **OT / ICS Network Telemetry Ingestion**: Operational Technology assets are represented as digital twin topology nodes; raw OT protocol telemetry is not ingested.
+* **Synthetic Data Generation in Production**: Dummy data is strictly prohibited from runtime modules.
+* **Presenting GNN as Primary Attribution**: GraphSAGE is retired to an experimental baseline due to scenario-identity mapping limitations (macro-F1 = 0.075).

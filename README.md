@@ -1,71 +1,88 @@
 # Autonomous Security Operations Platform
 
-A behavioural-intelligence layer for critical-infrastructure SOCs: it ingests
-security telemetry, detects behavioural anomalies (UEBA), attributes activity to
-MITRE ATT&CK techniques with **calibrated** confidence, predicts likely next steps,
-retrieves supporting threat-intel, estimates blast radius over a digital twin, and
-gates automated response — deterministically and auditably.
+A behavioral-intelligence layer for critical-infrastructure Security Operations Centers (SOCs). The platform ingests endpoint security telemetry, builds entity-keyed sessions, extracts tabular feature vectors, attributes malicious activity to MITRE ATT&CK techniques with calibrated confidence, predicts potential next-step transitions, retrieves supporting threat intelligence, simulates blast radius over a digital twin network topology, and gates automated SOAR response actions deterministically and auditably.
 
-This repository is the **single merged codebase** unifying two prior prototypes
-(`YashBhardwaj21/autonomous-security-operations-platform` = ML/data pipeline;
-`vikramhls/etbackend` = FastAPI backend). The merge simultaneously remediated the
-findings from the audit in `../sentinelgrid-audit/REPORT.md`; see `MERGE_REPORT.md`
-for the finding → resolution map and `BUILD_LOG.md` for the phase-by-phase record.
+---
 
-## Honest scope (what is real vs. what you must run)
+## Current Capability & Implementation Status
 
-- **Real & data-driven now:** canonical parser (Sysmon 1/3/7/10/11/12/13 + PowerShell
-  4103/4104), entity-keyed sessions, attribution feature space, fitted feature hygiene,
-  nested-LOSO evaluation harness, calibrated hierarchical attribution **scaffold**,
-  **data-derived** ATT&CK transition matrix (`models/transition_matrix.json`, built
-  from real OTRF compound scenarios), embedding retrieval (offline TF-IDF default),
-  online UEBA engine, digital-twin Dijkstra simulator, hardened SOAR blast-radius gate
-  with response-mode policy, EPSS-aware vuln scorer, JWT-authenticated ingest.
-- **No synthetic data** ever enters the runtime path. Dummy data exists only under
-  `tests/_fixtures` and `tests/harness_selftest`, and `scripts/check_no_dummy_in_src.py`
-  fails the build if `src/` references it.
-- **You (the operator) run the training and downloads** — every `.fit()` is behind a
-  guarded CLI flag and is never run by the code assistant. See `docs/ML_SPECIFICATION.md`.
+| Component | Status | Location | Notes |
+|---|---|---|---|
+| **Ingestion & Sessionisation** | Implemented | `src/ingestion/`, `src/sessions/` | Sysmon 1/3/7/10/11/12/13 + PowerShell 4103/4104; entity + logon-keyed session windows; strict timestamp parsing with drop logging. |
+| **Tabular Attribution Model** | In-Progress / Scaffold | `src/attribution/`, `scripts/train_attribution.py` | HierarchicalRandomForest scaffold with Platt scaling (`CalibratedClassifierCV`). `POST /ingest/events` returns `model_unavailable` if un-fitted. |
+| **UEBA Anomaly Engine** | Implemented | `src/ueba/` | Online Welford + IsolationForest anomaly detection on independent UEBA feature space. |
+| **Next-Step Prediction** | Implemented | `src/prediction/`, `models/` | Data-derived ATT&CK technique transition matrix built from compound OTRF attack scenarios (`models/transition_matrix.json`). |
+| **Threat-Intel Retrieval** | Implemented | `src/retrieval/` | TF-IDF / embedding similarity over ATT&CK STIX & advisories. Non-authoritative, evidence-only, non-gating. |
+| **Digital Twin Simulator** | Implemented | `src/twin/` | NetworkX Dijkstra reachability analysis over static asset-topology graphs. |
+| **SOAR Blast-Radius Gate** | Implemented | `src/soar/` | Deterministic policy gate. Fails safe: Tier-0 assets and un-reachable twin paths always require human approval. |
+| **GNN / GraphSAGE** | Retired / Archived | `experiments/gnn/`, `archive/gnn-2026-07/` | Archived negative experimental result (macro-F1 = 0.075 for scenario-identity classification). Excluded from runtime `src/`. |
 
-## Layout
+---
 
-```
-src/canon        canonical event/entity/session schema (single source of truth)
-src/ingestion    parsers (+OTRF/benign loaders); DropStats (no fabricated timestamps)
-src/sessions     entity+logon-keyed session builder
-src/features     extractors, attribution feature pipeline, fitted hygiene, labeling
-src/evaluation   nested-LOSO harness + calibration/ranking metrics
-src/attribution  calibrated hierarchical model (scaffold), SHAP, artifact loader
-src/prediction   data-derived transition matrix + next-step engine
-src/retrieval    embedding retrieval over real threat-intel corpus (non-gating)
-src/ueba         online Welford+IsolationForest anomaly engine (own feature space)
-src/twin         digital-twin Dijkstra simulator (real topology required)
-src/soar         blast-radius gate (response modes) + orchestrator
-src/vuln         EPSS-aware risk scorer
-src/api          FastAPI app, JWT auth, IncidentPipeline (the cross-boundary chain)
-src/config       single settings surface
-experiments/gnn   archived GraphSAGE experimental investigation & baseline
-archive/gnn-2026-07 archived GNN run artifacts and reports
-scripts          dataset/threat-intel fetchers, transition builder, guarded trainer
-tests            unit / integration (real inputs) ; _fixtures, harness_selftest (dummy)
+## Architecture Flow
+
+```mermaid
+flowchart TD
+    A[Raw Endpoint Telemetry] --> B[Canonical Parser\nsrc/ingestion]
+    B -->|Canonical Events| C[Session Builder\nsrc/sessions]
+    C -->|Entity-Keyed Sessions| D[Attribution Feature Pipeline\nsrc/features]
+    D -->|Feature Vectors| E{Attribution Model\nsrc/attribution}
+    E -->|Model Missing| F[Status: model_unavailable\nGraceful Degraded Mode]
+    E -->|Calibrated Probabilities| G[Next-Step Prediction\nsrc/prediction]
+    E -->|Calibrated Probabilities| H[Threat-Intel Retrieval\nsrc/retrieval]
+    G & H --> I[SOAR Blast-Radius Gate\nsrc/soar]
+    I -->|Tier-0 / High Risk| J[Human Approval Required]
+    I -->|Policy Allowed| K[Automated Action Proposed]
 ```
 
-## Quickstart (dev)
+---
 
-```bash
-python3.12 -m venv .venv && . .venv/bin/activate
+## Quickstart (Windows PowerShell)
+
+```powershell
+# 1. Activate virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# 2. Install core runtime dependencies
 pip install -r requirements.txt
-python scripts/check_no_dummy_in_src.py         # isolation guard
-python -m pytest tests -q                        # 52 tests
+
+# 3. Verify no synthetic test fixtures are imported into production src/
+python scripts/check_no_dummy_in_src.py
+
+# 4. Run the core test suite (record output and execution date)
+python -m pytest tests -q --basetemp data\pytest_tmp
 ```
 
-## Getting to real numbers (operator steps)
+---
 
-```bash
-python scripts/fetch_otrf_metadata.py            # labels + transitions (KB metadata)
-python scripts/build_transition_matrix.py        # deterministic, safe to run
-# clone a few OTRF scenarios into data/raw/Security-Datasets/ for real events, then:
-python scripts/train_attribution.py --train      # LOSO eval — YOU inspect results
-python scripts/fetch_threat_intel.py             # ATT&CK STIX + advisory scaffolding
-export JWT_SECRET=... && uvicorn src.api.app:app # run the API
+## Data Acquisition & Preparation
+
+To fetch real OTRF (Security-Datasets) telemetry and generate model artifacts:
+
+```powershell
+# Fetch MITRE ATT&CK technique metadata and scenario mappings
+python scripts/fetch_otrf_metadata.py
+
+# Inspect parameters for fetching host telemetry archives
+python scripts/fetch_otrf_events.py --help
+
+# Build the data-derived ATT&CK transition matrix artifact
+python scripts/build_transition_matrix.py
 ```
+
+> **Note**: Raw telemetry archives are stored under `data/raw/Security-Datasets/` and are ignored by version control.
+
+---
+
+## Documentation Index & Hackathon Guide
+
+* **[Hackathon Execution Runbook](docs/HACKATHON_RUNBOOK.md)** — Step-by-step instructions for data preflight, dataset auditing, label contract setup, LOSO evaluation, and live API demonstration.
+* **[Documentation Index](docs/README.md)** — Comprehensive index linking to Architecture, API Surface, Security Controls, PRD, and ML Specification.
+
+---
+
+## Hackathon Scope & Boundaries
+
+* **No Synthetic Data in Runtime**: Runtime pipelines operate strictly on parsed event structures. Synthetic data generators exist only under `tests/_fixtures/` and `tests/harness_selftest/`.
+* **Non-Executing SOAR Gate**: The SOAR gate determines response policies and blast radius reachability; active integration with third-party EDR/firewall APIs is out of scope.
+* **Non-Gating Retrieval**: The threat intelligence retrieval module provides contextual evidence to analysts but never influences automated SOAR gate decisions.
