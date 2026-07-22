@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import SAGEConv, BatchNorm, global_mean_pool
 
-from src.graph.types import FEATURE_DIM
+from experiments.gnn.gnn_experiment.graph.types import FEATURE_DIM
 
 
 class ActivityGraphDetector(nn.Module):

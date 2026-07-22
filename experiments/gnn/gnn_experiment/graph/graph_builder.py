@@ -16,7 +16,7 @@ from src.canon.schema import (
     ServiceEntity,
     UserEntity,
 )
-from src.graph.types import (
+from experiments.gnn.gnn_experiment.graph.types import (
     EDGE_TYPE_INDEX,
     FEATURE_DIM,
     FEATURE_SPEC,

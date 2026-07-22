@@ -42,7 +42,7 @@ def test_inactivity_gap_splits_sessions():
 
 
 def test_activity_relationships_invariants():
-    from src.graph.types import RelationshipType
+    from src.canon.schema import RelationshipType
 
     events, fac = _events(fx.TWO_HOST_BURST)
     sessions = SessionBuilder(fac).build_sessions(events, "demo")

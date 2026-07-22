@@ -1,14 +1,7 @@
 from enum import Enum
 from typing import Dict, List
 
-
-class RelationshipType(str, Enum):
-    SPAWNED = "spawned"
-    LOADED = "loaded"
-    CONNECTED_TO = "connected_to"
-    CREATED_FILE = "created_file"
-    MODIFIED_REGISTRY = "modified_registry"
-    ACCESSED_PROCESS = "accessed_process"
+from src.canon.schema import RelationshipType
 
 
 class NodeType(str, Enum):

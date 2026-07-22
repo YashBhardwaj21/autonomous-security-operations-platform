@@ -33,6 +33,16 @@ class SourceType(str, Enum):
     BOTS = "BOTS"
 
 
+class RelationshipType(str, Enum):
+    SPAWNED = "spawned"
+    LOADED = "loaded"
+    CONNECTED_TO = "connected_to"
+    CREATED_FILE = "created_file"
+    MODIFIED_REGISTRY = "modified_registry"
+    ACCESSED_PROCESS = "accessed_process"
+
+
+
 # Source populations that may ONLY feed the UEBA benign-baseline path.
 # Enforced in code (see src/features/labeling.py and src/ueba) — REPORT.md C1/M6.
 BENIGN_ONLY_SOURCES = frozenset({SourceType.LANL, SourceType.CICIDS, SourceType.TONIOT})

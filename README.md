@@ -44,6 +44,8 @@ src/soar         blast-radius gate (response modes) + orchestrator
 src/vuln         EPSS-aware risk scorer
 src/api          FastAPI app, JWT auth, IncidentPipeline (the cross-boundary chain)
 src/config       single settings surface
+experiments/gnn   archived GraphSAGE experimental investigation & baseline
+archive/gnn-2026-07 archived GNN run artifacts and reports
 scripts          dataset/threat-intel fetchers, transition builder, guarded trainer
 tests            unit / integration (real inputs) ; _fixtures, harness_selftest (dummy)
 ```

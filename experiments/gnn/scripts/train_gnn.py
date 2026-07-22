@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import random
+import sys
 from typing import Dict, List, Optional, Tuple
 
 import matplotlib
@@ -29,13 +30,13 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import WeightedRandomSampler
 from torch_geometric.loader import DataLoader
 
-from src.graph.dataset import ActivityGraphDataset
-from src.graph.types import FEATURE_DIM, FEATURE_SPEC
-from src.ml.gnn_detector import ActivityGraphDetector
+from experiments.gnn.gnn_experiment.graph.dataset import ActivityGraphDataset
+from experiments.gnn.gnn_experiment.graph.types import FEATURE_DIM, FEATURE_SPEC
+from experiments.gnn.gnn_experiment.ml.gnn_detector import ActivityGraphDetector
 
-RUNS_DIR = Path("runs")
+RUNS_DIR = Path("archive/gnn-2026-07/runs")
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
-REPORTS_DIR = Path("reports")
+REPORTS_DIR = Path("archive/gnn-2026-07/reports")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ------------------------------------------------------------
@@ -395,9 +396,6 @@ def main():
     f1_macro = f1_score(y_true, y_pred, average="macro", zero_division=0)
     f1_weighted = f1_score(y_true, y_pred, average="weighted", zero_division=0)
 
-    # ------------------------------------------------------------
-    # 4. ROC‑AUC with proper exception logging (no silent 0)
-    # ------------------------------------------------------------
     try:
         present_classes = np.unique(y_true)
         if len(present_classes) > 1:

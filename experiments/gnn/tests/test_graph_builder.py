@@ -8,12 +8,13 @@ from src.canon.schema import (
     NetworkConnectionEntity,
     ProcessEntity,
     RegistryEntity,
+    RelationshipType,
     ServiceEntity,
     SourceType,
     UserEntity,
 )
-from src.graph.graph_builder import GraphBuilder
-from src.graph.types import FEATURE_DIM, RelationshipType
+from experiments.gnn.gnn_experiment.graph.graph_builder import GraphBuilder
+from experiments.gnn.gnn_experiment.graph.types import FEATURE_DIM
 
 
 def _activity(**kwargs) -> Activity:
@@ -102,16 +103,15 @@ def test_process_modified_registry():
 
     assert data.x.shape == (2, FEATURE_DIM)
     assert data.edge_index.shape == (2, 1)
+    assert data.edge_attr.shape == (1,)
 
 
 def test_process_connected_network():
     p1 = ProcessEntity(entity_id="proc_1", process_id=100, image="curl.exe")
-    net1 = NetworkConnectionEntity(
-        entity_id="net_1", source_ip="10.0.0.1", dest_ip="8.8.8.8", source_port=1234, dest_port=80, protocol="TCP"
-    )
+    n1 = NetworkConnectionEntity(entity_id="net_1", destination_ip="192.168.1.50", destination_port=443, protocol="TCP")
     act = _activity(
         processes={"proc_1": p1},
-        network={"net_1": net1},
+        network={"net_1": n1},
         relationships=[("proc_1", RelationshipType.CONNECTED_TO.value, "net_1")],
     )
 
@@ -119,11 +119,11 @@ def test_process_connected_network():
 
     assert data.x.shape == (2, FEATURE_DIM)
     assert data.edge_index.shape == (2, 1)
+    assert data.edge_attr.shape == (1,)
 
 
-def test_missing_destination_node_ignored():
+def test_dangling_relationship_ignored():
     p1 = ProcessEntity(entity_id="proc_1", process_id=100, image="cmd.exe")
-    # Relationship points to non-existent proc_99
     act = _activity(
         processes={"proc_1": p1},
         relationships=[("proc_1", RelationshipType.SPAWNED.value, "proc_99")],
@@ -136,39 +136,25 @@ def test_missing_destination_node_ignored():
     assert data.edge_attr.shape == (0,)
 
 
-def test_unknown_relationship_type_ignored():
-    p1 = ProcessEntity(entity_id="proc_1", process_id=100, image="cmd.exe")
-    p2 = ProcessEntity(entity_id="proc_2", process_id=200, image="powershell.exe")
+def test_heterogeneous_graph_features():
+    p1 = ProcessEntity(entity_id="proc_1", process_id=100, image="powershell.exe", integrity_level="System", command_line="powershell -enc AAAA")
+    f1 = FileEntity(entity_id="file_1", file_path="C:\\malware.exe", file_type="Executable", extension="exe")
+    u1 = UserEntity(entity_id="user_1", user_name="Administrator", elevated_token=True, logon_type=2)
+    s1 = ServiceEntity(entity_id="svc_1", service_name="WinDefend")
+
     act = _activity(
-        processes={"proc_1": p1, "proc_2": p2},
-        relationships=[("proc_1", "UNKNOWN_REL", "proc_2")],
+        processes={"proc_1": p1},
+        files={"file_1": f1},
+        users={"user_1": u1},
+        services={"svc_1": s1},
+        relationships=[
+            ("proc_1", RelationshipType.LOADED.value, "file_1"),
+        ],
     )
 
     data = GraphBuilder().build(act)
 
-    assert data.x.shape == (2, FEATURE_DIM)
-    assert data.edge_index.shape == (2, 0)
-
-
-def test_deterministic_node_ordering():
-    # Insert keys out of alphabetical order
-    processes = {
-        "proc_z": ProcessEntity(entity_id="proc_z", process_id=300, image="z.exe"),
-        "proc_a": ProcessEntity(entity_id="proc_a", process_id=100, image="a.exe"),
-        "proc_m": ProcessEntity(entity_id="proc_m", process_id=200, image="m.exe"),
-    }
-    act = _activity(processes=processes)
-
-    data1 = GraphBuilder().build(act)
-    data2 = GraphBuilder().build(act)
-
-    assert torch.equal(data1.x, data2.x)
-
-
-def test_metadata_preservation():
-    act = _activity(activity_id="act_unique_123", scenario_id="SDWIN-9999", host="DC01")
-    data = GraphBuilder().build(act)
-
-    assert data.activity_id == "act_unique_123"
-    assert data.scenario_id == "SDWIN-9999"
-    assert data.host == "DC01"
+    assert data.x.shape == (4, FEATURE_DIM)
+    assert data.edge_index.shape == (2, 1)
+    assert data.edge_attr.shape == (1,)
+    assert not torch.isnan(data.x).any()

@@ -32,10 +32,10 @@ from src.canon.schema import (
     NetworkConnectionEntity,
     ProcessEntity,
     RegistryEntity,
+    RelationshipType,
     SourceType,
     UserEntity,
 )
-from src.graph.types import RelationshipType
 
 _TS_FIELDS = ("@timestamp", "UtcTime", "EventTime", "SystemTime")
 

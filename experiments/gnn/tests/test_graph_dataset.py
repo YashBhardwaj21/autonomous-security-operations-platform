@@ -3,7 +3,7 @@ import pytest
 import torch
 from torch_geometric.data import Data
 
-from src.graph.dataset import ActivityGraphDataset
+from experiments.gnn.gnn_experiment.graph.dataset import ActivityGraphDataset
 
 
 def test_graph_dataset_initialization():
@@ -38,4 +38,3 @@ def test_graph_dataset_item_properties():
     assert hasattr(item, "start_time")
     assert hasattr(item, "end_time")
     assert not torch.isnan(item.x).any()
-

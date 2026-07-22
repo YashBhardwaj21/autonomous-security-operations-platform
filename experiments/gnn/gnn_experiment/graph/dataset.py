@@ -9,7 +9,7 @@ import torch
 from torch_geometric.data import Data, InMemoryDataset
 
 from src.canon.schema import Activity
-from src.graph.graph_builder import GraphBuilder
+from experiments.gnn.gnn_experiment.graph.graph_builder import GraphBuilder
 
 
 class ActivityGraphDataset(InMemoryDataset):

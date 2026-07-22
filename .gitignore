@@ -53,6 +53,14 @@ reports/
 # Training Runs & Outputs
 runs/
 
+# Archive Artifact Ignores
+archive/**/runs/
+archive/**/activities/
+archive/**/*.pt
+archive/**/*.png
+archive/**/*.csv
+archive/**/*.json
+
 # Pytest & Coverage
 .pytest_cache/
 .pytest_tmp/

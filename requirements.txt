@@ -13,9 +13,8 @@ shap>=0.44
 imbalanced-learn>=0.12
 mlflow>=2.11
 xgboost>=2.0
-# --- graph ML / GNN ---
-torch>=2.2.0
-torch-geometric>=2.5.0
+# --- graph ML / GNN (moved to experiments/gnn/requirements.txt) ---
+
 
 # --- retrieval (Phase 6) ---
 sentence-transformers>=2.6
